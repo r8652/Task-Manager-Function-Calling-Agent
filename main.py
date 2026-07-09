@@ -1,12 +1,12 @@
 from dotenv import load_dotenv
+
 load_dotenv()
-#from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from agent_service import process_query
+from agent_service import agent
 
 
 class ChatRequest(BaseModel):
@@ -29,10 +29,9 @@ def home() -> HTMLResponse:
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     try:
-        response_text = process_query(request.message)
+        response_text = agent(request.message)
         return ChatResponse(response=response_text)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        print("--- ERROR TRACEBACK ---")
-        import traceback
-        traceback.print_exc() # זה ידפיס את השגיאה המלאה לטרמינל
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
