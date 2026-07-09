@@ -3,6 +3,7 @@ load_dotenv()
 #from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from agent_service import process_query
@@ -19,9 +20,10 @@ class ChatResponse(BaseModel):
 app = FastAPI(title="Task Manager Agent", version="1.0.0")
 
 
-@app.get("/")
-def health_check() -> dict[str, str]:
-    return {"status": "ok"}
+@app.get("/", response_class=HTMLResponse)
+def home() -> HTMLResponse:
+    with open("templates/index.html", "r", encoding="utf-8") as file:
+        return HTMLResponse(content=file.read())
 
 
 @app.post("/chat", response_model=ChatResponse)

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Manager Agent</title>
+    <style>
+      :root {
+        --bg: #07111f;
+        --card: rgba(10, 20, 36, 0.82);
+        --border: rgba(255,255,255,0.12);
+        --text: #f3f7ff;
+        --muted: #8ea0bd;
+        --accent: #6ee7f9;
+        --accent-2: #8b5cf6;
+        --success: #22c55e;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(110,231,249,0.2), transparent 28%),
+          linear-gradient(135deg, var(--bg), #0f1d33 70%, #090b14);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .shell {
+        width: min(960px, 100%);
+        background: var(--card);
+        backdrop-filter: blur(24px);
+        border: 1px solid var(--border);
+        border-radius: 28px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+        overflow: hidden;
+      }
+
+      .hero {
+        padding: 36px 36px 24px;
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(120deg, rgba(110,231,249,0.12), rgba(139,92,246,0.16));
+      }
+
+      .hero h1 {
+        margin: 0 0 10px;
+        font-size: clamp(1.8rem, 3vw, 2.4rem);
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1rem;
+        line-height: 1.7;
+      }
+
+      .content {
+        display: grid;
+        gap: 20px;
+        padding: 24px 36px 36px;
+      }
+
+      .panel {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 18px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        resize: vertical;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(6, 12, 22, 0.7);
+        color: var(--text);
+        border-radius: 14px;
+        padding: 14px 16px;
+        font-size: 1rem;
+        outline: none;
+      }
+
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(110,231,249,0.18);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      button {
+        border: none;
+        padding: 12px 16px;
+        border-radius: 999px;
+        font-weight: 700;
+        cursor: pointer;
+        color: white;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        opacity: 0.95;
+      }
+
+      .examples {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .chip {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: var(--muted);
+        padding: 8px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.95rem;
+      }
+
+      .chip:hover {
+        color: var(--text);
+        border-color: var(--accent);
+      }
+
+      .response {
+        white-space: pre-wrap;
+        line-height: 1.7;
+        color: #e7f3ff;
+        min-height: 60px;
+      }
+
+      .status {
+        color: var(--success);
+        font-size: 0.95rem;
+        margin-top: 8px;
+      }
+
+      @media (max-width: 720px) {
+        .hero, .content { padding: 20px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="hero">
+        <h1>Task Manager Agent</h1>
+        <p>ה-Agent שלך לניהול משימות עם AI ו-Function Calling. כתוב בקשה, שלח, וקבל תגובה חכמה ומיידית.</p>
+      </div>
+
+      <div class="content">
+        <div class="panel">
+          <label for="message">הודעה</label>
+          <textarea id="message" placeholder="לדוגמה: הוסף משימה חדשה בשם ללמוד FastAPI"></textarea>
+          <div class="actions">
+            <button onclick="sendMessage()">שלח הודעה</button>
+          </div>
+          <div class="examples">
+            <span class="chip" onclick="setExample('הוסף משימה חדשה בשם ללמוד FastAPI')">הוסף משימה</span>
+            <span class="chip" onclick="setExample('הצג את כל המשימות שלי')">הצג משימות</span>
+            <span class="chip" onclick="setExample('מחק משימה עם ID מסוים')">מחק משימה</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="status" id="status">מוכן לשליחה</div>
+          <div class="response" id="response">התגובה תופיע כאן...</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function sendMessage() {
+        const message = document.getElementById('message').value.trim();
+        const status = document.getElementById('status');
+        const response = document.getElementById('response');
+
+        if (!message) {
+          status.textContent = 'יש לכתוב הודעה לפני שליחה';
+          return;
+        }
+
+        status.textContent = 'שולח...';
+        response.textContent = '...';
+
+        try {
+          const res = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || 'שגיאה');
+
+          response.textContent = data.response;
+          status.textContent = 'התגובה הושלמה בהצלחה';
+        } catch (err) {
+          response.textContent = err.message;
+          status.textContent = 'אירעה שגיאה';
+        }
+      }
+
+      function setExample(text) {
+        document.getElementById('message').value = text;
+      }
+    </script>
+  </body>
+</html>
